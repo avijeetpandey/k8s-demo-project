@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  k8s-db:
+    image: postgres:15-alpine
+    container_name: local-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: k8s
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  # Spring Boot Application Service
+  k8s-demo-app:
+    build: . # Builds the image using the Dockerfile in the current directory
+    container_name: local-spring-boot
+    restart: on-failure
+    ports:
+      - "9000:9000"
+    environment:
+      # DB_HOST matches the name of the database service above
+      - DB_HOST=k8s-db
+      - DB_PORT=5432
+      - DB_NAME=k8s
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - k8s-db # Ensures the database starts before the application
+
+volumes:
+  # Persistent volume so your local database data survives container restarts
+  postgres-data:
